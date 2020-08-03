@@ -207,10 +207,13 @@ def generateCPPArray(finalList):
         numCycles = string[2]
         extraPage = string[3]
         struct = "{" + "\"" + instr + "\", " + "&cpu::" + instr + ", " + "&cpu::" + addrmode + ", " + numCycles + ", " + extraPage + "}, " 
-        f.write(struct + "\n")
+        f.write(struct)
 
 
         counter+=1
+
+        if (counter % 16 == 0):
+            f.write("\n")
 
 
     f.close()
