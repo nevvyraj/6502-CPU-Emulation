@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <sstream>
 
 #define RAMSIZE 64*1024
 
@@ -34,7 +35,10 @@ class cpu
         uint8_t ram[RAMSIZE];
 
         uint8_t instrCycles; //number of cycles current instruction needs to execute
-        uint8_t systemCycles; //total clock cycles
+        uint64_t systemCycles; //total clock cycles
+
+        uint16_t absoluteAddr;
+        uint8_t fetchedData; //data fetched from addressing mode absolute address
 
         typedef struct instruction{
             instruction(std::string n, void(cpu::*operation)(void), bool(cpu::*addrmode)(void),  uint8_t c,
@@ -59,6 +63,15 @@ class cpu
         ~cpu();
         
         void reset();
+        void step(); //step through one instruction 
+        bool instrComplete();
+
+        void loadProgram(std::istringstream& prog);
+
+        bool emulationDone(); //temporary: end emulation if BRK instruction encountered
+
+    private:
+        bool endEmulation;
 
     private:
         void setStatus(Flag flag, bool value);
@@ -67,10 +80,12 @@ class cpu
         uint8_t memRead(uint16_t addr);
         void memWrite(uint16_t addr, uint8_t data);
 
-        //instruction related functions
+        uint8_t fetchData( bool(cpu::*addrmode)() );
+
+    
+    //instruction related functions
     private:
         /* ADDRESSING MODES - return whether the addressing mode crosses a page boundary*/
-        bool ACC(); //accumulator
         bool ABS(); //absolute
         bool ABSX(); //absolute x-indexed
         bool ABSY(); //absolute y-indexed
@@ -109,12 +124,13 @@ class cpu
 
     //Debugging Functions
     public:
-       void print();
+       void printCPU();
        uint8_t getStatusReg();
        uint8_t getA();
        uint8_t getX();
        uint8_t getY();
        uint8_t getPC();
        uint8_t getStackPtr();
+       void initPC(uint16_t addr) { pc= addr;}
 
 };

@@ -1,7 +1,7 @@
 #include <iostream>
 #include "cpu.h"
 
-cpu::cpu()
+cpu::cpu() 
 {
     for (int i = 0; i < RAMSIZE; i++)
     {
@@ -16,8 +16,10 @@ cpu::cpu()
 
     instrCycles = 0;
     systemCycles = 0;
+    fetchedData = 0x00;
+    absoluteAddr = 0x000;
 
-    //TODO: make this neater lol
+
     opcodeLookup = {
             {"BRK", &cpu::BRK, &cpu::IMPL, 7, false},  {"ORA", &cpu::ORA, &cpu::INDX, 6, false},  {"NOP", &cpu::NOP, &cpu::IMPL, 2, false},  {"NOP", &cpu::NOP, &cpu::IMPL, 2, false}, {"NOP", &cpu::NOP, &cpu::IMPL, 2, false}, {"ORA", &cpu::ORA, &cpu::ZPG, 3, false},  {"ASL", &cpu::ASL, &cpu::ZPG, 5, false},  {"NOP", &cpu::NOP, &cpu::IMPL, 2, false}, {"PHP", &cpu::PHP, &cpu::IMPL, 3, false}, {"ORA", &cpu::ORA, &cpu::IMM, 2, false},  {"ASL", &cpu::ASL, &cpu::IMPL, 2, false}, {"NOP", &cpu::NOP, &cpu::IMPL, 2, false}, {"NOP", &cpu::NOP, &cpu::IMPL, 2, false}, {"ORA", &cpu::ORA, &cpu::ABS, 4, false}, {"ASL", &cpu::ASL, &cpu::ABS, 6, false},  {"NOP", &cpu::NOP, &cpu::IMPL, 2, false}, 
             {"BPL", &cpu::BPL, &cpu::REL, 2, false},   {"ORA", &cpu::ORA, &cpu::INDY, 5, true},   {"NOP", &cpu::NOP, &cpu::IMPL, 2, false},  {"NOP", &cpu::NOP, &cpu::IMPL, 2, false}, {"NOP", &cpu::NOP, &cpu::IMPL, 2, false}, {"ORA", &cpu::ORA, &cpu::ZPGX, 4, false}, {"ASL", &cpu::ASL, &cpu::ZPGX, 6, false}, {"NOP", &cpu::NOP, &cpu::IMPL, 2, false}, {"CLC", &cpu::CLC, &cpu::IMPL, 2, false}, {"ORA", &cpu::ORA, &cpu::ABSY, 4, true},  {"NOP", &cpu::NOP, &cpu::IMPL, 2, false}, {"NOP", &cpu::NOP, &cpu::IMPL, 2, false}, {"NOP", &cpu::NOP, &cpu::IMPL, 2, false}, {"ORA", &cpu::ORA, &cpu::ABSX, 4, true}, {"ASL", &cpu::ASL, &cpu::ABSX, 7, false}, {"NOP", &cpu::NOP, &cpu::IMPL, 2, false}, 
@@ -48,19 +50,11 @@ void cpu::reset()
 {
     status = 0x34; 
     stackPtr = 0xfd; //base of stack in memory is 0x100, stackptr represents the offset and grows downwards
-    A = 0x0;
-    X = 0x0;
-    Y = 0x0;
-
+  
     instrCycles = 0;
 
     //pc needs to jump to address at 0xfffc and 0xfffd (LITTLE ENDIAN)
 
-}
-
-void cpu::print()
-{ 
-    std::cout << "6502 cpu emulation!\n";
 }
 
 void cpu::setStatus(Flag flag, bool value)
@@ -95,6 +89,66 @@ void cpu::memWrite(uint16_t addr, uint8_t data)
     }
 }
 
+uint8_t cpu::fetchData(bool(cpu::*addrmode)())
+{
+    if (addrmode == &cpu::IMPL)
+    {
+        fetchedData = A;
+    }
+    else
+    {
+        fetchedData = memRead(absoluteAddr);   
+    }
+    
+    return fetchedData;
+}
+
+bool cpu::instrComplete()
+{
+    return instrCycles == 0;
+}
+
+bool cpu::emulationDone()
+{
+    return endEmulation;
+}
+
+void cpu::step()
+{
+   if (instrCycles == 0)
+   {
+        uint8_t opcode = memRead(pc++);
+
+        instrCycles = opcodeLookup[opcode].cycles;
+
+        bool crossedPageBoundary = (this->*opcodeLookup[opcode].addrmode)();
+        if (crossedPageBoundary && opcodeLookup[opcode].affectedByPageBoundaryCrossing) {instrCycles++;}
+
+        fetchData((opcodeLookup[opcode].addrmode));
+        (this->*opcodeLookup[opcode].operation)();
+
+        //end emulation when BRK is encountered for now
+        endEmulation = !opcodeLookup[opcode].name.compare("BRK"); 
+        
+   }
+
+   instrCycles--;
+   systemCycles++;
+}
+
+void cpu::loadProgram(std::istringstream& prog)
+{
+    uint16_t location = 0x8000;
+
+    std::string byte;
+    while(prog >> byte)
+    {
+        uint32_t num = std::stoul(byte, nullptr, 16);
+        ram[location++] = (uint8_t)num;
+    }
+    
+}
+
 /* ADDRESSING MODES */
 bool cpu::ABS()
 {
@@ -104,21 +158,20 @@ bool cpu::ABS()
 bool cpu::ABSX()
 {
     std::cout << __func__ << "\n";
-    return false;
+    return true;
 }
 bool cpu::ABSY()
 {
     std::cout << __func__ << "\n";
-    return false;
+    return true;
 }
 bool cpu::IMM()
 {
-    std::cout << __func__ << "\n";
+    absoluteAddr = pc++;
     return false;
 }
 bool cpu::IMPL()
 {
-    std::cout << __func__ << "\n";
     return false;
 }
 bool cpu::IND()
@@ -134,7 +187,7 @@ bool cpu::INDX()
 bool cpu::INDY()
 {
     std::cout << __func__ << "\n";
-    return false;
+    return true;
 } 
 bool cpu::REL()
 {
@@ -158,7 +211,22 @@ bool cpu::ZPGY()
 } 
 
 /* INSTRUCTION OPERATIONS */
-void cpu::ADC(){std::cout << __func__ << "\n";}
+void cpu::ADC()
+{
+    uint16_t result = 0;
+
+    result = (uint16_t)A + (uint16_t)fetchedData + (uint16_t)getStatus(C);
+    uint8_t overflow = ~(((A^fetchedData) & 0x80) >> 7) & (((A^result) & 0x80) >> 7);
+
+    A = (result & 0xff);
+
+
+    setStatus(N, (A & 0x80) >> 7);
+    setStatus(V, overflow);
+    setStatus(Z, A == 0x00);
+    setStatus(C, result > 255);
+
+}
 void cpu::AND(){std::cout << __func__ << "\n";}
 void cpu::ASL(){std::cout << __func__ << "\n";}
 void cpu::BCC(){std::cout << __func__ << "\n";}
@@ -183,11 +251,22 @@ void cpu::DEX(){std::cout << __func__ << "\n";}
 void cpu::DEY(){std::cout << __func__ << "\n";}
 void cpu::EOR(){std::cout << __func__ << "\n";}
 void cpu::INC(){std::cout << __func__ << "\n";}
-void cpu::INX(){std::cout << __func__ << "\n";}
+void cpu::INX()
+{
+    X = X + 1;
+    setStatus(N, (X & 0x80) >> 7);
+    setStatus(Z, X == 0x00);
+}
 void cpu::INY(){std::cout << __func__ << "\n";}
 void cpu::JMP(){std::cout << __func__ << "\n";}
 void cpu::JSR(){std::cout << __func__ << "\n";}
-void cpu::LDA(){std::cout << __func__ << "\n";}
+void cpu::LDA()
+{
+    A = fetchedData;
+    setStatus(N, (A & 0x80) >> 7);
+    setStatus(Z, A == 0x00);
+
+}
 void cpu::LDX(){std::cout << __func__ << "\n";}
 void cpu::LDY(){std::cout << __func__ << "\n";}
 void cpu::LSR(){std::cout << __func__ << "\n";}
@@ -208,7 +287,12 @@ void cpu::SEI(){std::cout << __func__ << "\n";}
 void cpu::STA(){std::cout << __func__ << "\n";}
 void cpu::STX(){std::cout << __func__ << "\n";}
 void cpu::STY(){std::cout << __func__ << "\n";}
-void cpu::TAX(){std::cout << __func__ << "\n";}
+void cpu::TAX()
+{
+    X = A;
+    setStatus(N, (X & 0x80) >> 7);
+    setStatus(Z, X == 0x00);
+}
 void cpu::TAY(){std::cout << __func__ << "\n";}
 void cpu::TSX(){std::cout << __func__ << "\n";}
 void cpu::TXA(){std::cout << __func__ << "\n";}
@@ -217,6 +301,16 @@ void cpu::TYA(){std::cout << __func__ << "\n";}
 
 
 /* DEBUGGING FUNCTIONS */
+void cpu::printCPU()
+{ 
+    std::cout << "---------------------------------------------------\n";
+    std::cout << "A: 0x" << std::hex << (uint16_t)A << " X: 0x" << std::hex << (uint16_t)X << " Y: 0x" << std::hex << (uint16_t)Y << "\n";
+    std::cout << "N V - B D I Z C\n";
+    std::cout << (uint16_t)getStatus(N) << " " << (uint16_t)getStatus(V) << " " << (uint16_t)getStatus(U) << " " << (uint16_t)getStatus(B) << " " << (uint16_t)getStatus(D) << " " << (uint16_t)getStatus(I) << " " << (uint16_t)getStatus(Z) << " " << (uint16_t)getStatus(C) << "\n";
+    std::cout << "PC: 0x" << std::hex << pc << " StackPtr: 0x" << std::hex << (uint16_t)stackPtr << "\n";
+    std::cout << "total clock cycles: " << std::dec << systemCycles << "\n";
+}
+
 uint8_t cpu::getStatusReg() 
 {
     return status;
