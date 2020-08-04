@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
+#include <unordered_map>
 
 #define RAMSIZE 64*1024
 
@@ -70,6 +71,7 @@ class cpu
 
         bool emulationDone(); //temporary: end emulation if BRK instruction encountered
 
+
     private:
         bool endEmulation;
 
@@ -124,13 +126,14 @@ class cpu
 
     //Debugging Functions
     public:
-       void printCPU();
-       uint8_t getStatusReg();
-       uint8_t getA();
-       uint8_t getX();
-       uint8_t getY();
-       uint8_t getPC();
-       uint8_t getStackPtr();
-       void initPC(uint16_t addr) { pc= addr;}
+        void printCPU();
+        uint8_t getStatusReg();
+        uint8_t getA();
+        uint8_t getX();
+        uint8_t getY();
+        uint8_t getPC();
+        uint8_t getStackPtr();
+        void initPC(uint16_t addr) { pc= addr;}
+
 
 };

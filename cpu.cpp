@@ -87,6 +87,8 @@ void cpu::memWrite(uint16_t addr, uint8_t data)
     {
         ram[addr] = data;
     }
+
+    std::cout << "[RAM] $" << std::hex << absoluteAddr << ": 0x" << (uint16_t)ram[absoluteAddr] << "\n";
 }
 
 uint8_t cpu::fetchData(bool(cpu::*addrmode)())
@@ -122,7 +124,11 @@ void cpu::step()
         instrCycles = opcodeLookup[opcode].cycles;
 
         bool crossedPageBoundary = (this->*opcodeLookup[opcode].addrmode)();
-        if (crossedPageBoundary && opcodeLookup[opcode].affectedByPageBoundaryCrossing) {instrCycles++;}
+        if (crossedPageBoundary && opcodeLookup[opcode].affectedByPageBoundaryCrossing) 
+        {
+            instrCycles++;
+            std::cout << std::hex << (uint16_t)opcode << ": " << opcodeLookup[opcode].name << " REQUIRED AN EXTRA CYCLE\n";
+        }
 
         fetchData((opcodeLookup[opcode].addrmode));
         (this->*opcodeLookup[opcode].operation)();
@@ -149,10 +155,19 @@ void cpu::loadProgram(std::istringstream& prog)
     
 }
 
+//whether two addresses are on the same page or not
+static bool samePage(uint16_t addrA, uint16_t addrB)
+{
+    return (addrA & 0xFF00) == (addrB & 0xFF00);
+}
+
 /* ADDRESSING MODES */
 bool cpu::ABS()
 {
-    std::cout << __func__ << "\n";
+    uint8_t lo = memRead(pc++);
+    uint8_t hi = memRead(pc++);
+    absoluteAddr = (hi << 8) | lo;
+
     return false;
 }
 bool cpu::ABSX()
@@ -176,27 +191,67 @@ bool cpu::IMPL()
 }
 bool cpu::IND()
 {
-    std::cout << __func__ << "\n";
+    uint8_t lo = memRead(pc++);
+    uint8_t hi = memRead(pc++);
+
+    uint16_t indirectAddr = (hi << 8) | lo;
+
+    uint8_t absAddrLo = memRead(indirectAddr);
+    uint8_t absAddrHi = memRead(indirectAddr + 1);
+
+    absoluteAddr = (absAddrHi << 8) | absAddrLo;
+
     return false;
 }
 bool cpu::INDX()
 {  
-    std::cout << __func__ << "\n";
+    uint8_t zeroPageAddr = (memRead(pc++) + X) & 0x00FF;
+
+    uint8_t relativeLo = memRead(zeroPageAddr);
+    uint8_t relativeHi = memRead(zeroPageAddr + 1);
+    uint16_t relativeAddr = (relativeHi << 8) | relativeLo;
+
+    absoluteAddr = relativeAddr;
+
     return false;
 }
 bool cpu::INDY()
 {
-    std::cout << __func__ << "\n";
-    return true;
+    uint8_t zeroPageAddr = memRead(pc++) & 0x00FF;
+    uint8_t relativeLo = memRead(zeroPageAddr);
+    uint8_t relativeHi = memRead(zeroPageAddr + 1);
+
+    uint16_t relativeAddr = (relativeHi << 8) | relativeLo;
+
+    absoluteAddr = relativeAddr + Y;
+    
+    return !samePage(relativeAddr,absoluteAddr); 
 } 
 bool cpu::REL()
 {
-    std::cout << __func__ << "\n";
+    uint8_t relativeAddr8bit = memRead(pc++);
+    uint16_t relativeAddr = relativeAddr8bit;
+
+    //sign extended the 8bit offset if its negative
+    if (relativeAddr8bit & 0x80)
+    {
+        relativeAddr = relativeAddr8bit | 0xFF00;
+    }
+
+    absoluteAddr = pc + relativeAddr;
+
+    instrCycles++;
+
+    if (!samePage(pc,absoluteAddr))
+    {
+        instrCycles++;
+    }
+
     return false;
 } 
 bool cpu::ZPG()
 {
-    std::cout << __func__ << "\n";
+    absoluteAddr = memRead(pc++) & 0x00ff;
     return false;
 } 
 bool cpu::ZPGX()
@@ -234,7 +289,14 @@ void cpu::BCS(){std::cout << __func__ << "\n";}
 void cpu::BEQ(){std::cout << __func__ << "\n";}
 void cpu::BIT(){std::cout << __func__ << "\n";}
 void cpu::BMI(){std::cout << __func__ << "\n";}
-void cpu::BNE(){std::cout << __func__ << "\n";}
+void cpu::BNE()
+{
+    if (getStatus(Z) == 0)
+    {
+        pc = absoluteAddr;
+    }
+
+}
 void cpu::BPL(){std::cout << __func__ << "\n";}
 void cpu::BRK(){std::cout << __func__ << "\n";}
 void cpu::BVC(){std::cout << __func__ << "\n";}
@@ -243,11 +305,46 @@ void cpu::CLC(){std::cout << __func__ << "\n";}
 void cpu::CLD(){std::cout << __func__ << "\n";}
 void cpu::CLI(){std::cout << __func__ << "\n";}
 void cpu::CLV(){std::cout << __func__ << "\n";}
-void cpu::CMP(){std::cout << __func__ << "\n";}
-void cpu::CPX(){std::cout << __func__ << "\n";}
-void cpu::CPY(){std::cout << __func__ << "\n";}
+void cpu::CMP()
+{
+    //doing a 2's complement addtion: A + (-fetchedData)
+    uint8_t negData = ~(fetchedData) + 1;
+   
+    uint16_t result = A + (negData);
+    
+    setStatus(N, (result & 0x0080) >> 7);
+    setStatus(Z, (result & 0x00FF) == 0x0000);
+    setStatus(C, result & 0x0100);
+}
+void cpu::CPX()
+{
+    uint8_t negData = ~(fetchedData) + 1;
+   
+    uint16_t result = X + (negData);
+    
+    setStatus(N, (result & 0x0080) >> 7);
+    setStatus(Z, (result & 0x00FF) == 0x0000);
+    setStatus(C, result & 0x0100);
+
+}
+void cpu::CPY()
+{
+    uint8_t negData = ~(fetchedData) + 1;
+   
+    uint16_t result = Y + (negData);
+    
+    setStatus(N, (result & 0x0080) >> 7);
+    setStatus(Z, (result & 0x00FF) == 0x0000);
+    setStatus(C, result & 0x0100);
+}
 void cpu::DEC(){std::cout << __func__ << "\n";}
-void cpu::DEX(){std::cout << __func__ << "\n";}
+void cpu::DEX()
+{
+    X = X - 1;
+    setStatus(N, (X & 0x80) >> 7);
+    setStatus(Z, X == 0x00);
+
+}
 void cpu::DEY(){std::cout << __func__ << "\n";}
 void cpu::EOR(){std::cout << __func__ << "\n";}
 void cpu::INC(){std::cout << __func__ << "\n";}
@@ -258,7 +355,10 @@ void cpu::INX()
     setStatus(Z, X == 0x00);
 }
 void cpu::INY(){std::cout << __func__ << "\n";}
-void cpu::JMP(){std::cout << __func__ << "\n";}
+void cpu::JMP()
+{
+    pc = absoluteAddr;
+}
 void cpu::JSR(){std::cout << __func__ << "\n";}
 void cpu::LDA()
 {
@@ -267,8 +367,18 @@ void cpu::LDA()
     setStatus(Z, A == 0x00);
 
 }
-void cpu::LDX(){std::cout << __func__ << "\n";}
-void cpu::LDY(){std::cout << __func__ << "\n";}
+void cpu::LDX()
+{
+    X = fetchedData;
+    setStatus(N, (X & 0x80) >> 7);
+    setStatus(Z, X == 0x00);
+}
+void cpu::LDY()
+{
+    Y = fetchedData;
+    setStatus(N, (Y & 0x80) >> 7);
+    setStatus(Z, Y == 0x00);
+}
 void cpu::LSR(){std::cout << __func__ << "\n";}
 void cpu::NOP(){std::cout << __func__ << "\n";}
 void cpu::ORA(){std::cout << __func__ << "\n";}
@@ -284,9 +394,18 @@ void cpu::SBC(){std::cout << __func__ << "\n";}
 void cpu::SEC(){std::cout << __func__ << "\n";}
 void cpu::SED(){std::cout << __func__ << "\n";}
 void cpu::SEI(){std::cout << __func__ << "\n";}
-void cpu::STA(){std::cout << __func__ << "\n";}
-void cpu::STX(){std::cout << __func__ << "\n";}
-void cpu::STY(){std::cout << __func__ << "\n";}
+void cpu::STA()
+{
+    memWrite(absoluteAddr, A);
+}
+void cpu::STX()
+{
+    memWrite(absoluteAddr, X);
+}
+void cpu::STY()
+{
+    memWrite(absoluteAddr, Y);
+}
 void cpu::TAX()
 {
     X = A;
@@ -307,7 +426,7 @@ void cpu::printCPU()
     std::cout << "A: 0x" << std::hex << (uint16_t)A << " X: 0x" << std::hex << (uint16_t)X << " Y: 0x" << std::hex << (uint16_t)Y << "\n";
     std::cout << "N V - B D I Z C\n";
     std::cout << (uint16_t)getStatus(N) << " " << (uint16_t)getStatus(V) << " " << (uint16_t)getStatus(U) << " " << (uint16_t)getStatus(B) << " " << (uint16_t)getStatus(D) << " " << (uint16_t)getStatus(I) << " " << (uint16_t)getStatus(Z) << " " << (uint16_t)getStatus(C) << "\n";
-    std::cout << "PC: 0x" << std::hex << pc << " StackPtr: 0x" << std::hex << (uint16_t)stackPtr << "\n";
+    std::cout << "Next PC: 0x" << std::hex << pc << " StackPtr: 0x" << std::hex << (uint16_t)stackPtr << "\n";
     std::cout << "total clock cycles: " << std::dec << systemCycles << "\n";
 }
 

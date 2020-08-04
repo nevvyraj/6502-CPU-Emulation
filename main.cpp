@@ -4,30 +4,29 @@
 int main (void){
 
     cpu nes;
-
     
-
     nes.initPC(0x8000);
 
-    std::istringstream sampleProgram("a9 7f aa e8 69 7f 00"); //overflow test
-    //std::istringstream sampleProgram("a9 c0 aa e8 69 c4 00");
+    //std::istringstream sampleProgram("a2 08 ca 8e 00 02 e0 03 d0 f8 8e 01 02 00 "); 
+    //std::string program = "a9 01 85 f0 a9 cc 85 f1 6c f0 00"; //indirect JMP
+    //std::string program = "a2 01 a9 05 85 01 a9 07 85 02 a0 0a 8c 05 07 a1 00"; //INDX
+    std::string program = "a0 01 a9 03 85 01 a9 07 85 02 a2 0a 8e 04 07 b1 01"; //INDY
+    std::istringstream sampleProgram(program);
+    
     nes.loadProgram(sampleProgram);
+    sampleProgram.seekg(0);
 
     /*
         From: https://skilldrick.github.io/easy6502/ (this emulator stops when a BRK is encountered)
 
-        LDA #$c0  ;Load the hex value $c0 into the A register
-        TAX       ;Transfer the value in the A register to X
-        INX       ;Increment the value in the X register
-        ADC #$c4  ;Add the hex value $c4 to the A register
-        BRK       ;Break - we're done
-
-        Output:
-            A=$84 X=$c1 Y=$00
-            SP=$ff PC=$0607 (pc started at $0600)
-
-            NV-BDIZC
-            10110001
+                LDX #$08
+            decrement:
+                DEX
+                STX $0200
+                CPX #$03
+                BNE decrement
+                STX $0201
+                BRK
     */
 
     nes.printCPU();
