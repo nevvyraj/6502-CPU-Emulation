@@ -172,13 +172,25 @@ bool cpu::ABS()
 }
 bool cpu::ABSX()
 {
-    std::cout << __func__ << "\n";
-    return true;
+    uint8_t lo = memRead(pc++);
+    uint8_t hi = memRead(pc++);
+
+    uint16_t relativeAddr = (hi << 8) | lo;
+
+    absoluteAddr = relativeAddr + X;
+
+    return !samePage(absoluteAddr, relativeAddr);
 }
 bool cpu::ABSY()
 {
-    std::cout << __func__ << "\n";
-    return true;
+    uint8_t lo = memRead(pc++);
+    uint8_t hi = memRead(pc++);
+
+    uint16_t relativeAddr = (hi << 8) | lo;
+
+    absoluteAddr = relativeAddr + Y;
+
+    return !samePage(absoluteAddr, relativeAddr);
 }
 bool cpu::IMM()
 {
@@ -251,17 +263,17 @@ bool cpu::REL()
 } 
 bool cpu::ZPG()
 {
-    absoluteAddr = memRead(pc++) & 0x00ff;
+    absoluteAddr = memRead(pc++) & 0x00FF;
     return false;
 } 
 bool cpu::ZPGX()
 {
-    std::cout << __func__ << "\n";
+    absoluteAddr = (memRead(pc++) + X) & 0x00FF;
     return false;
 } 
 bool cpu::ZPGY()
 {
-    std::cout << __func__ << "\n";
+    absoluteAddr = (memRead(pc++) + Y) & 0x00FF;
     return false;
 } 
 
@@ -354,7 +366,13 @@ void cpu::INX()
     setStatus(N, (X & 0x80) >> 7);
     setStatus(Z, X == 0x00);
 }
-void cpu::INY(){std::cout << __func__ << "\n";}
+void cpu::INY()
+{
+    Y = Y + 1;
+    setStatus(N, (Y & 0x80) >> 7);
+    setStatus(Z, Y == 0x00);
+}
+
 void cpu::JMP()
 {
     pc = absoluteAddr;
@@ -412,7 +430,12 @@ void cpu::TAX()
     setStatus(N, (X & 0x80) >> 7);
     setStatus(Z, X == 0x00);
 }
-void cpu::TAY(){std::cout << __func__ << "\n";}
+void cpu::TAY()
+{
+    Y = A;
+    setStatus(N, (Y & 0x80) >> 7);
+    setStatus(Z, Y == 0x00);
+}
 void cpu::TSX(){std::cout << __func__ << "\n";}
 void cpu::TXA(){std::cout << __func__ << "\n";}
 void cpu::TXS(){std::cout << __func__ << "\n";}
