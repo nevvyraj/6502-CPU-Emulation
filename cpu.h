@@ -131,9 +131,10 @@ class cpu
         uint8_t getA();
         uint8_t getX();
         uint8_t getY();
-        uint8_t getPC();
+        uint16_t getPC();
         uint8_t getStackPtr();
         void initPC(uint16_t addr) { pc= addr;}
 
+        std::unordered_map<uint16_t, std::string> disassemble();
 
 };

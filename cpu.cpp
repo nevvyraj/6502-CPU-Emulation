@@ -88,7 +88,7 @@ void cpu::memWrite(uint16_t addr, uint8_t data)
         ram[addr] = data;
     }
 
-    std::cout << "[RAM] $" << std::hex << absoluteAddr << ": 0x" << (uint16_t)ram[absoluteAddr] << "\n";
+  //  std::cout << "[RAM] $" << std::hex << absoluteAddr << ": 0x" << (uint16_t)ram[absoluteAddr] << "\n";
 }
 
 uint8_t cpu::fetchData(bool(cpu::*addrmode)())
@@ -310,7 +310,10 @@ void cpu::BNE()
 
 }
 void cpu::BPL(){std::cout << __func__ << "\n";}
-void cpu::BRK(){std::cout << __func__ << "\n";}
+void cpu::BRK()
+{
+    //does nothing for now
+}
 void cpu::BVC(){std::cout << __func__ << "\n";}
 void cpu::BVS(){std::cout << __func__ << "\n";}
 void cpu::CLC(){std::cout << __func__ << "\n";}
@@ -398,7 +401,10 @@ void cpu::LDY()
     setStatus(Z, Y == 0x00);
 }
 void cpu::LSR(){std::cout << __func__ << "\n";}
-void cpu::NOP(){std::cout << __func__ << "\n";}
+void cpu::NOP()
+{
+    //does nothing
+}
 void cpu::ORA(){std::cout << __func__ << "\n";}
 void cpu::PHA(){std::cout << __func__ << "\n";}
 void cpu::PHP(){std::cout << __func__ << "\n";}
@@ -445,12 +451,20 @@ void cpu::TYA(){std::cout << __func__ << "\n";}
 /* DEBUGGING FUNCTIONS */
 void cpu::printCPU()
 { 
-    std::cout << "---------------------------------------------------\n";
+/*
     std::cout << "A: 0x" << std::hex << (uint16_t)A << " X: 0x" << std::hex << (uint16_t)X << " Y: 0x" << std::hex << (uint16_t)Y << "\n";
     std::cout << "N V - B D I Z C\n";
     std::cout << (uint16_t)getStatus(N) << " " << (uint16_t)getStatus(V) << " " << (uint16_t)getStatus(U) << " " << (uint16_t)getStatus(B) << " " << (uint16_t)getStatus(D) << " " << (uint16_t)getStatus(I) << " " << (uint16_t)getStatus(Z) << " " << (uint16_t)getStatus(C) << "\n";
     std::cout << "Next PC: 0x" << std::hex << pc << " StackPtr: 0x" << std::hex << (uint16_t)stackPtr << "\n";
     std::cout << "total clock cycles: " << std::dec << systemCycles << "\n";
+    std::cout << "---------------------------------------------------\n";
+*/
+
+    std::cout << "A:" <<std::hex << (uint16_t)A << " X:" << (uint16_t)X << " Y:" << (uint16_t)Y;// << " P:" << printP(status) << "\n";
+   // std::cout << " P(NV-BDIZC):" << (uint16_t)getStatus(N) << (uint16_t)getStatus(V) << (uint16_t)getStatus(U) << (uint16_t)getStatus(B) << (uint16_t)getStatus(D) << (uint16_t)getStatus(I) << (uint16_t)getStatus(Z) << (uint16_t)getStatus(C);
+    std::cout << " P:" << (uint16_t)status;
+    std::cout << " SP:" << std::hex << (uint16_t)stackPtr;
+    std::cout << " CYC:" << std::dec << systemCycles << "\n";
 }
 
 uint8_t cpu::getStatusReg() 
@@ -468,11 +482,133 @@ uint8_t cpu::getY()
 {
     return Y;
 }
-uint8_t cpu::getPC()
+uint16_t cpu::getPC()
 {
     return pc;
 }
 uint8_t cpu::getStackPtr()
 {
     return stackPtr;
+}
+
+std::unordered_map<uint16_t, std::string> cpu::disassemble()
+{
+    std::unordered_map<uint16_t, std::string> map;
+
+    uint16_t startAddr = 0x0000;
+    uint16_t endAddr = 0xFFFF;
+    uint32_t addr = startAddr; //pc
+    uint16_t instrAddr;
+
+    std::string instr;
+
+
+    auto hex = [](uint16_t data, uint8_t numDigits)
+    {
+        std::string s('0', numDigits);
+        std::string hexAlphabet = "0123456789ABCDEF";
+
+        for (int i = numDigits - 1; i >= 0; i--)
+        {
+            s[i] = hexAlphabet[data & 0x000F];
+            data >>= 4;
+        }
+
+        return s;
+    }; 
+
+    uint8_t loData = 0;
+    uint8_t hiData = 0;
+    while(addr <= (uint32_t)endAddr)
+    {
+        instrAddr = addr;
+        uint8_t opcode = memRead(addr++);
+        
+
+        instr += opcodeLookup[opcode].name + " ";
+        if (opcodeLookup[opcode].addrmode == &cpu::IMPL)
+        {
+            instr += " {IMPL}";
+        }
+        else if (opcodeLookup[opcode].addrmode == &cpu::IMM)
+        {
+            loData = memRead(addr++);
+            instr += "#$" + hex(loData,2) + " {IMM}";
+        }
+        else if (opcodeLookup[opcode].addrmode == &cpu::ABS)
+        {
+            loData = memRead(addr++);
+            hiData = memRead(addr++);
+
+            instr += "$" + hex((hiData << 8) | loData,4) + " {ABS}";
+        }        
+        else if (opcodeLookup[opcode].addrmode == &cpu::ABSX)
+        {
+            loData = memRead(addr++);
+            hiData = memRead(addr++);
+
+            uint16_t relativeAddr = (hiData << 8) | loData;
+
+            instr += "$" + hex(relativeAddr,4) + ",X {ABSX}";
+        }
+        else if (opcodeLookup[opcode].addrmode == &cpu::ABSY)
+        {
+            loData = memRead(addr++);
+            hiData = memRead(addr++);
+
+            uint16_t relativeAddr = (hiData << 8) | loData;
+
+            instr += "$" + hex(relativeAddr,4) + ",Y {ABSY}";
+        }
+        else if (opcodeLookup[opcode].addrmode == &cpu::IND)
+        {
+            loData = memRead(addr++);
+            hiData = memRead(addr++);
+
+            uint16_t indirectAddr = (hiData << 8) | loData;
+
+            instr += "($" + hex(indirectAddr,4) + ") {IND}";
+        }
+        else if (opcodeLookup[opcode].addrmode == &cpu::INDX)
+        {
+            loData = memRead(addr++);
+            instr += "($" + hex(loData,2) + ",X) {INDX}";
+        }
+        else if (opcodeLookup[opcode].addrmode == &cpu::INDY)
+        {
+            loData = memRead(addr++);
+            instr += "($" + hex(loData,2) + "),Y {INDY}";
+        }
+        else if (opcodeLookup[opcode].addrmode == &cpu::ZPG)
+        {
+            loData = memRead(addr++) & 0xFF;
+            instr += "$" + hex(loData,2) + " {ZPG}";   
+        }
+        else if (opcodeLookup[opcode].addrmode == &cpu::ZPGX)
+        {
+            loData = memRead(addr++) & 0xFF;
+            instr += "$" + hex(loData,2) + ",X {ZPGX}";       
+        }
+        else if (opcodeLookup[opcode].addrmode == &cpu::ZPGY)
+        {
+            loData = memRead(addr++) & 0xFF;
+            instr += "$" + hex(loData,2) + ",Y {ZPGY}";  
+        }
+        else if (opcodeLookup[opcode].addrmode == &cpu::REL)
+        {
+            loData = memRead(addr++);
+            uint16_t relativeAddr = loData;
+            if (loData & 0x80)
+            {
+                relativeAddr = loData | 0xFF00;
+            }
+
+            instr += "$" + hex(relativeAddr + addr, 4) + " {REL}";
+        }
+                   
+        map[instrAddr] = instr;
+        instr = "";
+    }
+
+    return map;
 }
