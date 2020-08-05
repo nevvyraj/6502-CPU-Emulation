@@ -134,6 +134,7 @@ class cpu
         uint16_t getPC();
         uint8_t getStackPtr();
         void initPC(uint16_t addr) { pc= addr;}
+        uint8_t getMemVal(uint16_t addr) {return memRead(addr);}
 
         std::unordered_map<uint16_t, std::string> disassemble();
 

@@ -127,7 +127,9 @@ void cpu::step()
         if (crossedPageBoundary && opcodeLookup[opcode].affectedByPageBoundaryCrossing) 
         {
             instrCycles++;
-            std::cout << std::hex << (uint16_t)opcode << ": " << opcodeLookup[opcode].name << " REQUIRED AN EXTRA CYCLE\n";
+
+            //TODO: test this case
+            //std::cout << std::hex << (uint16_t)opcode << ": " << opcodeLookup[opcode].name << " REQUIRES AN EXTRA CYCLE\n";
         }
 
         fetchData((opcodeLookup[opcode].addrmode));
@@ -294,13 +296,18 @@ void cpu::ADC()
     setStatus(C, result > 255);
 
 }
-void cpu::AND(){std::cout << __func__ << "\n";}
-void cpu::ASL(){std::cout << __func__ << "\n";}
-void cpu::BCC(){std::cout << __func__ << "\n";}
-void cpu::BCS(){std::cout << __func__ << "\n";}
-void cpu::BEQ(){std::cout << __func__ << "\n";}
-void cpu::BIT(){std::cout << __func__ << "\n";}
-void cpu::BMI(){std::cout << __func__ << "\n";}
+void cpu::AND()
+{
+    A = A & fetchedData;
+    setStatus(N, (A & 0x80) >> 7);
+    setStatus(Z , A == 0x00);
+}
+void cpu::ASL(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::BCC(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::BCS(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::BEQ(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::BIT(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::BMI(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::BNE()
 {
     if (getStatus(Z) == 0)
@@ -309,17 +316,17 @@ void cpu::BNE()
     }
 
 }
-void cpu::BPL(){std::cout << __func__ << "\n";}
+void cpu::BPL(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::BRK()
 {
     //does nothing for now
 }
-void cpu::BVC(){std::cout << __func__ << "\n";}
-void cpu::BVS(){std::cout << __func__ << "\n";}
-void cpu::CLC(){std::cout << __func__ << "\n";}
-void cpu::CLD(){std::cout << __func__ << "\n";}
-void cpu::CLI(){std::cout << __func__ << "\n";}
-void cpu::CLV(){std::cout << __func__ << "\n";}
+void cpu::BVC(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::BVS(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::CLC(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::CLD(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::CLI(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::CLV(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::CMP()
 {
     //doing a 2's complement addtion: A + (-fetchedData)
@@ -352,7 +359,7 @@ void cpu::CPY()
     setStatus(Z, (result & 0x00FF) == 0x0000);
     setStatus(C, result & 0x0100);
 }
-void cpu::DEC(){std::cout << __func__ << "\n";}
+void cpu::DEC(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::DEX()
 {
     X = X - 1;
@@ -360,9 +367,14 @@ void cpu::DEX()
     setStatus(Z, X == 0x00);
 
 }
-void cpu::DEY(){std::cout << __func__ << "\n";}
-void cpu::EOR(){std::cout << __func__ << "\n";}
-void cpu::INC(){std::cout << __func__ << "\n";}
+void cpu::DEY(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::EOR()
+{
+    A = A ^ fetchedData;
+    setStatus(N, (A & 0x80) >> 7);
+    setStatus(Z, A == 0x00);
+}
+void cpu::INC(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::INX()
 {
     X = X + 1;
@@ -380,7 +392,7 @@ void cpu::JMP()
 {
     pc = absoluteAddr;
 }
-void cpu::JSR(){std::cout << __func__ << "\n";}
+void cpu::JSR(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::LDA()
 {
     A = fetchedData;
@@ -400,24 +412,29 @@ void cpu::LDY()
     setStatus(N, (Y & 0x80) >> 7);
     setStatus(Z, Y == 0x00);
 }
-void cpu::LSR(){std::cout << __func__ << "\n";}
+void cpu::LSR(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::NOP()
 {
     //does nothing
 }
-void cpu::ORA(){std::cout << __func__ << "\n";}
-void cpu::PHA(){std::cout << __func__ << "\n";}
-void cpu::PHP(){std::cout << __func__ << "\n";}
-void cpu::PLA(){std::cout << __func__ << "\n";}
-void cpu::PLP(){std::cout << __func__ << "\n";}
-void cpu::ROL(){std::cout << __func__ << "\n";}
-void cpu::ROR(){std::cout << __func__ << "\n";}
-void cpu::RTI(){std::cout << __func__ << "\n";}
-void cpu::RTS(){std::cout << __func__ << "\n";}
-void cpu::SBC(){std::cout << __func__ << "\n";}
-void cpu::SEC(){std::cout << __func__ << "\n";}
-void cpu::SED(){std::cout << __func__ << "\n";}
-void cpu::SEI(){std::cout << __func__ << "\n";}
+void cpu::ORA()
+{
+    A = A | fetchedData;
+    setStatus(N, (A & 0x80) >> 7);
+    setStatus(Z, A == 0x00);
+}
+void cpu::PHA(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::PHP(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::PLA(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::PLP(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::ROL(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::ROR(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::RTI(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::RTS(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::SBC(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::SEC(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::SED(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::SEI(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::STA()
 {
     memWrite(absoluteAddr, A);
@@ -442,10 +459,10 @@ void cpu::TAY()
     setStatus(N, (Y & 0x80) >> 7);
     setStatus(Z, Y == 0x00);
 }
-void cpu::TSX(){std::cout << __func__ << "\n";}
-void cpu::TXA(){std::cout << __func__ << "\n";}
-void cpu::TXS(){std::cout << __func__ << "\n";}
-void cpu::TYA(){std::cout << __func__ << "\n";}
+void cpu::TSX(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::TXA(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::TXS(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::TYA(){std::cout << __func__ << "\n"; exit(-1);}
 
 
 /* DEBUGGING FUNCTIONS */
