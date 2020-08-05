@@ -67,6 +67,14 @@ int main (void){
     //EXPECTED RESULTS: $30 = 0x29
     std::string program = "a9 27 69 01 38 08 18 28 69 00 48 a9 00 68 85 30";
 
+    //test12 rti instruction
+    //EXPECTED RESULTS: $33 = 0x42
+    //std::string program = "18 a9 42 90 04 85 33 b0 0a a9 02 48 a9 59 48 38 08 18 40";
+
+    //test13 SEI & CLI & SED & CLD
+    //EXPECTED RESULT: $21 = 0x0C
+    //std::string program = "78 f8 08 68 85 20 58 d8 08 68 65 20 85 21";
+
     std::istringstream sampleProgram(program);
     
     uint16_t pcStart = 0x0600;

@@ -10,7 +10,7 @@ cpu::cpu()
         ram[i] = 0x00;
     }
 
-    status = 0x34; 
+    status = 0x30; 
     stackPtr = 0xfd; //base of stack in memory is 0x100, stackptr represents the offset and grows downwards
     A = 0x0;
     X = 0x0;
@@ -91,7 +91,7 @@ void cpu::memWrite(uint16_t addr, uint8_t data)
         ram[addr] = data;
     }
 
-    std::cout << "Writing: [RAM] $" << std::hex << addr << ": 0x" << (uint16_t)ram[addr] << "\n";
+    //std::cout << "Writing: [RAM] $" << std::hex << addr << ": 0x" << (uint16_t)ram[addr] << "\n";
 }
 
 uint8_t cpu::fetchData(bool(cpu::*addrmode)())
@@ -607,7 +607,15 @@ void cpu::ROR()
         memWrite(absoluteAddr, fetchedData);
     }
 }
-void cpu::RTI(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::RTI()
+{
+    status = popStack();
+    uint8_t pcLo = popStack();
+    uint8_t pcHi = popStack();
+
+    pc = (pcHi << 8) | pcLo;
+
+}
 void cpu::RTS()
 {
     uint8_t pcHi = popStack();
