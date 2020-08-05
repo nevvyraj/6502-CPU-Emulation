@@ -56,7 +56,12 @@ int main (void){
     //test9 all other branches
     //EXPECTED RESULTS: $80 = 0x1F
     //pc starts at 0600
-    std::string program = "a9 54 85 32 a9 b3 85 a1 a9 87 85 43 a2 a1 10 02 a2 32 b4 00 10 04 a9 05 a6 a1 30 02 e9 03 30 02 a9 41 49 30 85 32 75 00 50 02 a9 03 85 54 b6 00 75 51 50 02 a9 e5 75 40 70 05 99 01 00 65 55 70 02 a9 00 69 f0 90 04 85 60 65 43 90 02 a9 ff 65 54 b0 04 69 87 a6 60 b0 02 a9 00 95 73";
+    //std::string program = "a9 54 85 32 a9 b3 85 a1 a9 87 85 43 a2 a1 10 02 a2 32 b4 00 10 04 a9 05 a6 a1 30 02 e9 03 30 02 a9 41 49 30 85 32 75 00 50 02 a9 03 85 54 b6 00 75 51 50 02 a9 e5 75 40 70 05 99 01 00 65 55 70 02 a9 00 69 f0 90 04 85 60 65 43 90 02 a9 ff 65 54 b0 04 69 87 a6 60 b0 02 a9 00 95 73";
+
+    //test10 flag instructions
+    //EXPECTED RESULTS: $30 = 0xCE
+    //pc starts at 0600
+    std::string program = "a9 99 69 87 18 ea 90 04 69 60 69 93 38 ea 90 01 b8 50 02 a9 00 69 ad ea 85 30";
 
     std::istringstream sampleProgram(program);
     
@@ -64,8 +69,8 @@ int main (void){
     nes.initPC(pcStart);
     nes.loadProgram(sampleProgram, pcStart);
 
-    uint16_t resultLocation = 0x0080;
-    uint8_t result = 0x1F;
+    uint16_t resultLocation = 0x0030;
+    uint8_t result = 0xCE;
 
     std::unordered_map<uint16_t,std::string> code;
     code = nes.disassemble();

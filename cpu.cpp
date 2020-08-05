@@ -397,10 +397,22 @@ void cpu::BVS()
         pc = absoluteAddr;
     }
 }
-void cpu::CLC(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::CLD(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::CLI(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::CLV(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::CLC()
+{
+    setStatus(C,0);
+}
+void cpu::CLD()
+{
+    setStatus(D, 0);
+}
+void cpu::CLI()
+{
+    setStatus(I,0);
+}
+void cpu::CLV()
+{
+    setStatus(V,0);
+}
 void cpu::CMP()
 {
     //doing a 2's complement addtion: A + (-fetchedData)
@@ -603,9 +615,18 @@ void cpu::SBC()
     setStatus(Z, A == 0x00);
     setStatus(C, result > 255);
 }
-void cpu::SEC(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::SED(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::SEI(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::SEC()
+{
+    setStatus(C,1);
+}
+void cpu::SED()
+{
+    setStatus(D,1);
+}
+void cpu::SEI()
+{
+    setStatus(I,1);
+}
 void cpu::STA()
 {
     memWrite(absoluteAddr, A);
