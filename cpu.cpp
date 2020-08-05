@@ -75,11 +75,12 @@ uint8_t cpu::getStatus(Flag flag)
 
 uint8_t cpu::memRead(uint16_t addr)
 {
+
     if (addr >= 0x0000 && addr <= RAMSIZE - 1)
     {
         return ram[addr];
     }
-
+    
     return 0x00;
 }
 
@@ -90,7 +91,7 @@ void cpu::memWrite(uint16_t addr, uint8_t data)
         ram[addr] = data;
     }
 
-    //std::cout << "[RAM] $" << std::hex << addr << ": 0x" << (uint16_t)ram[addr] << "\n";
+    std::cout << "Writing: [RAM] $" << std::hex << addr << ": 0x" << (uint16_t)ram[addr] << "\n";
 }
 
 uint8_t cpu::fetchData(bool(cpu::*addrmode)())
@@ -549,10 +550,24 @@ void cpu::ORA()
     setStatus(N, (A & 0x80) >> 7);
     setStatus(Z, A == 0x00);
 }
-void cpu::PHA(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::PHP(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::PLA(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::PLP(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::PHA()
+{
+    pushStack(A);
+}
+void cpu::PHP()
+{
+    pushStack(status);
+}
+void cpu::PLA()
+{
+    A = popStack();
+    setStatus(N, (A & 0x80) >> 7);
+    setStatus(Z, A == 0x00);
+}
+void cpu::PLP()
+{
+    status = popStack();
+}
 void cpu::ROL()
 {
     uint8_t carry = getStatus(C);

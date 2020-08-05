@@ -61,7 +61,11 @@ int main (void){
     //test10 flag instructions
     //EXPECTED RESULTS: $30 = 0xCE
     //pc starts at 0600
-    std::string program = "a9 99 69 87 18 ea 90 04 69 60 69 93 38 ea 90 01 b8 50 02 a9 00 69 ad ea 85 30";
+    //std::string program = "a9 99 69 87 18 ea 90 04 69 60 69 93 38 ea 90 01 b8 50 02 a9 00 69 ad ea 85 30";
+
+    //test11 stack instructions
+    //EXPECTED RESULTS: $30 = 0x29
+    std::string program = "a9 27 69 01 38 08 18 28 69 00 48 a9 00 68 85 30";
 
     std::istringstream sampleProgram(program);
     
@@ -70,7 +74,7 @@ int main (void){
     nes.loadProgram(sampleProgram, pcStart);
 
     uint16_t resultLocation = 0x0030;
-    uint8_t result = 0xCE;
+    uint8_t result = 0x29;
 
     std::unordered_map<uint16_t,std::string> code;
     code = nes.disassemble();
