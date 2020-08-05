@@ -68,7 +68,7 @@ class cpu
         void step(); //step through one instruction 
         bool instrComplete();
 
-        void loadProgram(std::istringstream& prog);
+        void loadProgram(std::istringstream& prog, uint16_t addr);
 
         bool emulationDone(); //temporary: end emulation if BRK instruction encountered
 
@@ -84,6 +84,9 @@ class cpu
         void memWrite(uint16_t addr, uint8_t data);
 
         uint8_t fetchData( bool(cpu::*addrmode)() );
+
+        void pushStack(uint8_t data);
+        uint8_t popStack(); //return top of stack
 
     
     //instruction related functions

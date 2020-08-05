@@ -1,6 +1,8 @@
 #include <iostream>
 #include "cpu.h"
 
+#define STACK_OFFSET 0x0100
+
 cpu::cpu() 
 {
     for (int i = 0; i < RAMSIZE; i++)
@@ -88,7 +90,7 @@ void cpu::memWrite(uint16_t addr, uint8_t data)
         ram[addr] = data;
     }
 
-  //  std::cout << "[RAM] $" << std::hex << absoluteAddr << ": 0x" << (uint16_t)ram[absoluteAddr] << "\n";
+    //std::cout << "[RAM] $" << std::hex << addr << ": 0x" << (uint16_t)ram[addr] << "\n";
 }
 
 uint8_t cpu::fetchData(bool(cpu::*addrmode)())
@@ -103,6 +105,18 @@ uint8_t cpu::fetchData(bool(cpu::*addrmode)())
     }
     
     return fetchedData;
+}
+
+void cpu::pushStack(uint8_t data)
+{
+    stackPtr = (stackPtr - 1) & 0xFF;
+    memWrite(STACK_OFFSET | stackPtr, data);
+}
+uint8_t cpu::popStack()
+{
+    uint8_t data = memRead(STACK_OFFSET | stackPtr);
+    stackPtr = (stackPtr + 1) & 0xFF;
+    return data;
 }
 
 bool cpu::instrComplete()
@@ -144,9 +158,9 @@ void cpu::step()
    systemCycles++;
 }
 
-void cpu::loadProgram(std::istringstream& prog)
+void cpu::loadProgram(std::istringstream& prog, uint16_t addr)
 {
-    uint16_t location = 0x8000;
+    uint16_t location = addr;
 
     std::string byte;
     while(prog >> byte)
@@ -214,7 +228,7 @@ bool cpu::IND()
     uint8_t absAddrHi = memRead(indirectAddr + 1);
 
     absoluteAddr = (absAddrHi << 8) | absAddrLo;
-
+    
     return false;
 }
 bool cpu::INDX()
@@ -417,7 +431,16 @@ void cpu::JMP()
 {
     pc = absoluteAddr;
 }
-void cpu::JSR(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::JSR()
+{
+    //since addressing mode bumps PC to the next instruction just save that on the stack
+    uint8_t pcLo = pc & 0x00FF;
+    uint8_t pcHi = (pc & 0xFF00) >> 8;
+    pushStack(pcLo);
+    pushStack(pcHi);    
+
+    pc = absoluteAddr;
+}
 void cpu::LDA()
 {
     A = fetchedData;
@@ -508,7 +531,16 @@ void cpu::ROR()
     }
 }
 void cpu::RTI(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::RTS(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::RTS()
+{
+    
+    uint8_t pcHi = popStack();
+    uint8_t pcLo = popStack();
+    
+    
+
+    pc = (pcHi << 8) | pcLo;
+}
 void cpu::SBC(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::SEC(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::SED(){std::cout << __func__ << "\n"; exit(-1);}

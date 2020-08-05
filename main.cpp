@@ -5,8 +5,6 @@ int main (void){
 
     cpu nes;
     
-    nes.initPC(0x8000);
-
     //std::string program = "a2 08 ca 8e 00 02 e0 03 d0 f8 8e 01 02 00 "; 
     //std::string program = "a9 01 85 f0 a9 cc 85 f1 6c f0 00"; //indirect JMP
     //std::string program = "a2 01 a9 05 85 01 a9 07 85 02 a0 0a 8c 05 07 a1 00"; //INDX
@@ -26,15 +24,25 @@ int main (void){
 
     //test2 inc,dec
     //EXPECTED RESULTS: $71=0xFF
-    //std::string program = "a9 ff a2 00 85 90 e6 90 e6 90 a5 90 a6 90 95 90 f6 90 b5 90 a6 91 9d 90 01 ee 92 01 bd 90 01 ae 92 01 9d 90 01 fe 90 01 bd 90 01 ae 93 01 9d 70 01 de 70 01 bd 70 01 ae 74 01 9d 70 01 ce 73 01 bd 70 01 ae 73 01 95 70 d6 70 b5 70 a6 72 95 70 c6 71 c6 71";
+    std::string program = "a9 ff a2 00 85 90 e6 90 e6 90 a5 90 a6 90 95 90 f6 90 b5 90 a6 91 9d 90 01 ee 92 01 bd 90 01 ae 92 01 9d 90 01 fe 90 01 bd 90 01 ae 93 01 9d 70 01 de 70 01 bd 70 01 ae 74 01 9d 70 01 ce 73 01 bd 70 01 ae 73 01 95 70 d6 70 b5 70 a6 72 95 70 c6 71 c6 71";
 
     //test3 bitshift
     //EXPECTED RESULTS: $01DD = 0x6E
-    std::string program = "a9 4b 4a 0a 85 50 06 50 06 50 46 50 a5 50 a6 50 09 c9 85 60 16 4c 56 4c 56 4c b5 4c a6 60 09 41 8d 2e 01 5e 00 01 5e 00 01 1e 00 01 bd 00 01 ae 2e 01 09 81 9d 00 01 4e 36 01 4e 36 01 0e 36 01 bd 00 01 2a 2a 6a 85 70 a6 70 09 03 95 0c 26 c0 66 c0 66 c0 b5 0c a6 c0 85 d0 36 75 36 75 76 75 a5 d0 a6 d0 9d 00 01 2e b7 01 2e b7 01 2e b7 01 6e b7 01 bd 00 01 ae b7 01 8d dd 01 3e 00 01 7e 00 01 7e 00 01";
+    //std::string program = "a9 4b 4a 0a 85 50 06 50 06 50 46 50 a5 50 a6 50 09 c9 85 60 16 4c 56 4c 56 4c b5 4c a6 60 09 41 8d 2e 01 5e 00 01 5e 00 01 1e 00 01 bd 00 01 ae 2e 01 09 81 9d 00 01 4e 36 01 4e 36 01 0e 36 01 bd 00 01 2a 2a 6a 85 70 a6 70 09 03 95 0c 26 c0 66 c0 66 c0 b5 0c a6 c0 85 d0 36 75 36 75 76 75 a5 d0 a6 d0 9d 00 01 2e b7 01 2e b7 01 2e b7 01 6e b7 01 bd 00 01 ae b7 01 8d dd 01 3e 00 01 7e 00 01 7e 00 01";
+
+    //test4 jmp - final address at $0624 -- need to load program at $0600
+    //nes.initPC(0x0600);
+    //EXPECTED RESULTS: $40=0x42
+    //std::string program = "a9 24 85 20 a9 06 85 21 a9 00 09 03 4c 11 06 09 ff 09 30 20 1d 06 09 42 6c 20 00 09 ff 85 30 a6 30 a9 00 60 95 0d ";
 
     std::istringstream sampleProgram(program);
     
-    nes.loadProgram(sampleProgram);
+    
+    nes.initPC(0x8000);
+    nes.loadProgram(sampleProgram, 0x8000);
+
+    uint16_t resultLocation = 0x0071;
+    uint8_t result = 0xFF;
 
     std::unordered_map<uint16_t,std::string> code;
     code = nes.disassemble();
@@ -64,17 +72,15 @@ int main (void){
     
     }
 
-    uint16_t resultLocation = 0x01DD;
-    uint8_t result = 0x6E;
+
     std::cout << std::hex << "ram[$" << resultLocation << "]: 0x" << (uint16_t)nes.getMemVal(resultLocation) << "\n";
     if (result == nes.getMemVal(resultLocation))
     {
-        std::cout << "TEST PASSED!\n";
+        std::cout << "\033[1;32mTEST PASSED!\033[0m\n";
     } else
     {
-        std::cout << "TEST FAILED\n";
+        std::cout << "\033[1;31mTEST FAILED\033[0m\n";
     }
     
-
     return 0;
 }
