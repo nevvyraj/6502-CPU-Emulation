@@ -330,8 +330,20 @@ void cpu::ASL()
         memWrite(absoluteAddr,fetchedData);
     }
 }
-void cpu::BCC(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::BCS(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::BCC()
+{
+    if (getStatus(C) == 0)
+    {
+        pc = absoluteAddr;
+    }
+}
+void cpu::BCS()
+{
+    if (getStatus(C) == 1)
+    {
+        pc = absoluteAddr;
+    }
+}
 void cpu::BEQ()
 {
     if (getStatus(Z) == 1)
@@ -345,7 +357,13 @@ void cpu::BIT()
     setStatus(V, (fetchedData & 0x40) >> 6);
     setStatus(Z, (A & fetchedData) == 0x00);
 }
-void cpu::BMI(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::BMI()
+{
+     if (getStatus(N) == 1)
+    {
+        pc = absoluteAddr;
+    }
+}
 void cpu::BNE()
 {
     if (getStatus(Z) == 0)
@@ -354,13 +372,31 @@ void cpu::BNE()
     }
 
 }
-void cpu::BPL(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::BPL()
+{
+    if (getStatus(N) == 0)
+    {
+        pc = absoluteAddr;
+    }
+}
 void cpu::BRK()
 {
     //does nothing for now
 }
-void cpu::BVC(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::BVS(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::BVC()
+{
+    if (getStatus(V) == 0)
+    {
+        pc = absoluteAddr;
+    }
+}
+void cpu::BVS()
+{
+    if (getStatus(V) == 1)
+    {
+        pc = absoluteAddr;
+    }
+}
 void cpu::CLC(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::CLD(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::CLI(){std::cout << __func__ << "\n"; exit(-1);}

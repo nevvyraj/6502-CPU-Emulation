@@ -51,7 +51,12 @@ int main (void){
     //test8 cpx,cpy,bit
     //EXPECTED RESULTS $42 = 0xA5
     //pc starts at 0600
-    std::string program = "a9 a5 85 20 8d 20 01 a9 5a 85 21 a2 a5 e0 a5 f0 02 a2 01 e4 20 f0 02 a2 02 ec 20 01 f0 02 a2 03 86 30 a4 30 c0 a5 f0 02 a0 04 c4 20 f0 02 a0 05 cc 20 01 f0 02 a0 06 84 31 a5 31 24 20 d0 02 a9 07 2c 20 01 d0 02 a9 08 24 21 d0 02 85 42";
+    //std::string program = "a9 a5 85 20 8d 20 01 a9 5a 85 21 a2 a5 e0 a5 f0 02 a2 01 e4 20 f0 02 a2 02 ec 20 01 f0 02 a2 03 86 30 a4 30 c0 a5 f0 02 a0 04 c4 20 f0 02 a0 05 cc 20 01 f0 02 a0 06 84 31 a5 31 24 20 d0 02 a9 07 2c 20 01 d0 02 a9 08 24 21 d0 02 85 42";
+
+    //test9 all other branches
+    //EXPECTED RESULTS: $80 = 0x1F
+    //pc starts at 0600
+    std::string program = "a9 54 85 32 a9 b3 85 a1 a9 87 85 43 a2 a1 10 02 a2 32 b4 00 10 04 a9 05 a6 a1 30 02 e9 03 30 02 a9 41 49 30 85 32 75 00 50 02 a9 03 85 54 b6 00 75 51 50 02 a9 e5 75 40 70 05 99 01 00 65 55 70 02 a9 00 69 f0 90 04 85 60 65 43 90 02 a9 ff 65 54 b0 04 69 87 a6 60 b0 02 a9 00 95 73";
 
     std::istringstream sampleProgram(program);
     
@@ -59,8 +64,8 @@ int main (void){
     nes.initPC(pcStart);
     nes.loadProgram(sampleProgram, pcStart);
 
-    uint16_t resultLocation = 0x0042;
-    uint8_t result = 0xA5;
+    uint16_t resultLocation = 0x0080;
+    uint8_t result = 0x1F;
 
     std::unordered_map<uint16_t,std::string> code;
     code = nes.disassemble();
