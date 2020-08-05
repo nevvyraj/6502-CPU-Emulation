@@ -332,7 +332,13 @@ void cpu::ASL()
 }
 void cpu::BCC(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::BCS(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::BEQ(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::BEQ()
+{
+    if (getStatus(Z) == 1)
+    {
+        pc = absoluteAddr;
+    }
+}
 void cpu::BIT(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::BMI(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::BNE()
@@ -395,12 +401,16 @@ void cpu::DEC()
 }
 void cpu::DEX()
 {
-    X = X - 1;
+    X = (X - 1) & 0xFF;
     setStatus(N, (X & 0x80) >> 7);
     setStatus(Z, X == 0x00);
-
 }
-void cpu::DEY(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::DEY()
+{
+    Y = (Y - 1) & 0xFF;
+    setStatus(N, (Y & 0x80) >> 7);
+    setStatus(Z, Y == 0x00);   
+}
 void cpu::EOR()
 {
     A = A ^ fetchedData;
@@ -416,13 +426,13 @@ void cpu::INC()
 }
 void cpu::INX()
 {
-    X = X + 1;
+    X = (X + 1) & 0xFF;
     setStatus(N, (X & 0x80) >> 7);
     setStatus(Z, X == 0x00);
 }
 void cpu::INY()
 {
-    Y = Y + 1;
+    Y = (Y + 1) & 0xFF;
     setStatus(N, (Y & 0x80) >> 7);
     setStatus(Z, Y == 0x00);
 }
@@ -475,7 +485,6 @@ void cpu::LSR()
         memWrite(absoluteAddr,fetchedData);
     }
     
-
 }
 void cpu::NOP()
 {
@@ -533,15 +542,26 @@ void cpu::ROR()
 void cpu::RTI(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::RTS()
 {
-    
     uint8_t pcHi = popStack();
     uint8_t pcLo = popStack();
     
-    
-
     pc = (pcHi << 8) | pcLo;
 }
-void cpu::SBC(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::SBC()
+{
+    uint16_t result = 0;
+
+    uint8_t onesComplementData = ~fetchedData;
+    result = (uint16_t)A + (uint16_t)onesComplementData + (uint16_t)getStatus(C);
+    uint8_t overflow = ~(((A^onesComplementData) & 0x80) >> 7) & (((A^result) & 0x80) >> 7);
+
+    A = (result & 0xff);
+
+    setStatus(N, (A & 0x80) >> 7);
+    setStatus(V, overflow);
+    setStatus(Z, A == 0x00);
+    setStatus(C, result > 255);
+}
 void cpu::SEC(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::SED(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::SEI(){std::cout << __func__ << "\n"; exit(-1);}
@@ -569,10 +589,30 @@ void cpu::TAY()
     setStatus(N, (Y & 0x80) >> 7);
     setStatus(Z, Y == 0x00);
 }
-void cpu::TSX(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::TXA(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::TXS(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::TYA(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::TSX()
+{
+    X = stackPtr;
+    setStatus(N, (X & 0x80) >> 7);
+    setStatus(Z, X == 0x00);
+}
+void cpu::TXA()
+{
+    A = X;
+    setStatus(N, (A & 0x80) >> 7);
+    setStatus(Z, A == 0x00);
+}
+void cpu::TXS()
+{
+    stackPtr = X;
+    setStatus(N, (stackPtr & 0x80) >> 7);
+    setStatus(Z, stackPtr == 0x00);
+}
+void cpu::TYA()
+{
+    A = Y;
+    setStatus(N, (A & 0x80) >> 7);
+    setStatus(Z, A == 0x00);
+}
 
 
 /* DEBUGGING FUNCTIONS */
