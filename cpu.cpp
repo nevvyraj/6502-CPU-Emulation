@@ -119,12 +119,12 @@ void cpu::step()
 {
    if (instrCycles == 0)
    {
-        uint8_t opcode = memRead(pc++);
+        currentOpcode = memRead(pc++);
 
-        instrCycles = opcodeLookup[opcode].cycles;
+        instrCycles = opcodeLookup[currentOpcode].cycles;
 
-        bool crossedPageBoundary = (this->*opcodeLookup[opcode].addrmode)();
-        if (crossedPageBoundary && opcodeLookup[opcode].affectedByPageBoundaryCrossing) 
+        bool crossedPageBoundary = (this->*opcodeLookup[currentOpcode].addrmode)();
+        if (crossedPageBoundary && opcodeLookup[currentOpcode].affectedByPageBoundaryCrossing) 
         {
             instrCycles++;
 
@@ -132,11 +132,11 @@ void cpu::step()
             //std::cout << std::hex << (uint16_t)opcode << ": " << opcodeLookup[opcode].name << " REQUIRES AN EXTRA CYCLE\n";
         }
 
-        fetchData((opcodeLookup[opcode].addrmode));
-        (this->*opcodeLookup[opcode].operation)();
+        fetchData((opcodeLookup[currentOpcode].addrmode));
+        (this->*opcodeLookup[currentOpcode].operation)();
 
         //end emulation when BRK is encountered for now
-        endEmulation = !opcodeLookup[opcode].name.compare("BRK"); 
+        endEmulation = !opcodeLookup[currentOpcode].name.compare("BRK"); 
         
    }
 
@@ -302,7 +302,20 @@ void cpu::AND()
     setStatus(N, (A & 0x80) >> 7);
     setStatus(Z , A == 0x00);
 }
-void cpu::ASL(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::ASL()
+{
+    setStatus(C, (fetchedData & 0x80) >> 7);
+    fetchedData = fetchedData << 1;
+    setStatus(Z, fetchedData == 0x00);
+    setStatus(N, (fetchedData & 0x80) >> 7);
+    if (currentOpcode == 0x0A)
+    {
+        A = fetchedData;
+    }
+    else{
+        memWrite(absoluteAddr,fetchedData);
+    }
+}
 void cpu::BCC(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::BCS(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::BEQ(){std::cout << __func__ << "\n"; exit(-1);}
@@ -359,7 +372,13 @@ void cpu::CPY()
     setStatus(Z, (result & 0x00FF) == 0x0000);
     setStatus(C, result & 0x0100);
 }
-void cpu::DEC(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::DEC()
+{
+    fetchedData = fetchedData - 1;
+    setStatus(N, (fetchedData & 0x80) >> 7);
+    setStatus(Z, fetchedData == 0x00);
+    memWrite(absoluteAddr, fetchedData);
+}
 void cpu::DEX()
 {
     X = X - 1;
@@ -374,7 +393,13 @@ void cpu::EOR()
     setStatus(N, (A & 0x80) >> 7);
     setStatus(Z, A == 0x00);
 }
-void cpu::INC(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::INC()
+{
+    fetchedData = fetchedData + 1;
+    setStatus(N, (fetchedData & 0x80) >> 7);
+    setStatus(Z, fetchedData == 0x00);
+    memWrite(absoluteAddr, fetchedData);
+}
 void cpu::INX()
 {
     X = X + 1;
@@ -412,7 +437,23 @@ void cpu::LDY()
     setStatus(N, (Y & 0x80) >> 7);
     setStatus(Z, Y == 0x00);
 }
-void cpu::LSR(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::LSR()
+{
+    setStatus(C, fetchedData & 0x01);
+    fetchedData = fetchedData >> 1;
+    setStatus(Z, fetchedData == 0x00);
+
+    if (currentOpcode == 0x4A) //accumulator addressing mode
+    {
+        A = fetchedData;
+    }
+    else
+    {
+        memWrite(absoluteAddr,fetchedData);
+    }
+    
+
+}
 void cpu::NOP()
 {
     //does nothing
@@ -427,8 +468,45 @@ void cpu::PHA(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::PHP(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::PLA(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::PLP(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::ROL(){std::cout << __func__ << "\n"; exit(-1);}
-void cpu::ROR(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::ROL()
+{
+    uint8_t carry = getStatus(C);
+    setStatus(C, (fetchedData & 0x80) >> 7);
+    fetchedData = fetchedData << 1;
+    fetchedData = fetchedData | carry;
+
+    setStatus(N, (fetchedData & 0x80) >> 7);
+    setStatus(Z, fetchedData == 0x00);
+
+    if (currentOpcode == 0x2A)
+    {
+        A = fetchedData;
+    }
+    else
+    {
+        memWrite(absoluteAddr, fetchedData);
+    }
+    
+}
+void cpu::ROR()
+{
+    uint8_t carry = getStatus(C);
+    setStatus(C, (fetchedData & 0x01));
+    fetchedData = fetchedData >> 1;
+    fetchedData = fetchedData | (carry << 7);
+
+    setStatus(N, (fetchedData & 0x80) >> 7);
+    setStatus(Z, fetchedData == 0x00);
+
+    if (currentOpcode == 0x6A)
+    {
+        A = fetchedData;
+    }
+    else
+    {
+        memWrite(absoluteAddr, fetchedData);
+    }
+}
 void cpu::RTI(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::RTS(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::SBC(){std::cout << __func__ << "\n"; exit(-1);}

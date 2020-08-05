@@ -40,6 +40,7 @@ class cpu
 
         uint16_t absoluteAddr;
         uint8_t fetchedData; //data fetched from addressing mode absolute address
+        uint8_t currentOpcode; //opcode of currently executing instruction
 
         typedef struct instruction{
             instruction(std::string n, void(cpu::*operation)(void), bool(cpu::*addrmode)(void),  uint8_t c,

@@ -22,7 +22,15 @@ int main (void){
 
     //test1 and,or,xor
     //EXPECTED RESULTS: $A9 = 0xAA
-    std::string program = "a9 55 29 53 09 38 49 11 85 99 a9 b9 85 10 a9 e7 85 11 a9 39 85 12 a5 99 25 10 05 11 45 12 a2 10 85 99 a9 bc 85 20 a9 31 85 21 a9 17 85 22 a5 99 35 10 15 11 55 12 85 99 a9 6f 8d 10 01 a9 3c 8d 11 01 a9 27 8d 12 01 a5 99 2d 10 01 0d 11 01 4d 12 01 85 99 a9 8a 8d 20 01 a9 47 8d 21 01 a9 8f 8d 22 01 a5 99 3d 10 01 1d 11 01 5d 12 01 a0 20 85 99 a9 73 8d 30 01 a9 2a 8d 31 01 a9 f1 8d 32 01 a5 99 39 10 01 19 11 01 59 12 01 85 99 a9 70 85 30 a9 01 85 31 a9 71 85 32 a9 01 85 33 a9 72 85 34 a9 01 85 35 a9 c5 8d 70 01 a9 7c 8d 71 01 a9 a1 8d 72 01 a5 99 21 20 01 22 41 24 85 99 a9 60 85 40 a9 01 85 41 a9 61 85 42 a9 01 85 43 a9 62 85 44 a9 01 85 45 a9 37 8d 50 02 a9 23 8d 51 02 a9 9d 8d 52 02 a5 99 a0 f0 31 40 11 42 51 44 85 a9";
+    //std::string program = "a9 55 29 53 09 38 49 11 85 99 a9 b9 85 10 a9 e7 85 11 a9 39 85 12 a5 99 25 10 05 11 45 12 a2 10 85 99 a9 bc 85 20 a9 31 85 21 a9 17 85 22 a5 99 35 10 15 11 55 12 85 99 a9 6f 8d 10 01 a9 3c 8d 11 01 a9 27 8d 12 01 a5 99 2d 10 01 0d 11 01 4d 12 01 85 99 a9 8a 8d 20 01 a9 47 8d 21 01 a9 8f 8d 22 01 a5 99 3d 10 01 1d 11 01 5d 12 01 a0 20 85 99 a9 73 8d 30 01 a9 2a 8d 31 01 a9 f1 8d 32 01 a5 99 39 10 01 19 11 01 59 12 01 85 99 a9 70 85 30 a9 01 85 31 a9 71 85 32 a9 01 85 33 a9 72 85 34 a9 01 85 35 a9 c5 8d 70 01 a9 7c 8d 71 01 a9 a1 8d 72 01 a5 99 21 20 01 22 41 24 85 99 a9 60 85 40 a9 01 85 41 a9 61 85 42 a9 01 85 43 a9 62 85 44 a9 01 85 45 a9 37 8d 50 02 a9 23 8d 51 02 a9 9d 8d 52 02 a5 99 a0 f0 31 40 11 42 51 44 85 a9";
+
+    //test2 inc,dec
+    //EXPECTED RESULTS: $71=0xFF
+    //std::string program = "a9 ff a2 00 85 90 e6 90 e6 90 a5 90 a6 90 95 90 f6 90 b5 90 a6 91 9d 90 01 ee 92 01 bd 90 01 ae 92 01 9d 90 01 fe 90 01 bd 90 01 ae 93 01 9d 70 01 de 70 01 bd 70 01 ae 74 01 9d 70 01 ce 73 01 bd 70 01 ae 73 01 95 70 d6 70 b5 70 a6 72 95 70 c6 71 c6 71";
+
+    //test3 bitshift
+    //EXPECTED RESULTS: $01DD = 0x6E
+    std::string program = "a9 4b 4a 0a 85 50 06 50 06 50 46 50 a5 50 a6 50 09 c9 85 60 16 4c 56 4c 56 4c b5 4c a6 60 09 41 8d 2e 01 5e 00 01 5e 00 01 1e 00 01 bd 00 01 ae 2e 01 09 81 9d 00 01 4e 36 01 4e 36 01 0e 36 01 bd 00 01 2a 2a 6a 85 70 a6 70 09 03 95 0c 26 c0 66 c0 66 c0 b5 0c a6 c0 85 d0 36 75 36 75 76 75 a5 d0 a6 d0 9d 00 01 2e b7 01 2e b7 01 2e b7 01 6e b7 01 bd 00 01 ae b7 01 8d dd 01 3e 00 01 7e 00 01 7e 00 01";
 
     std::istringstream sampleProgram(program);
     
@@ -56,8 +64,16 @@ int main (void){
     
     }
 
-    uint16_t resultLocation = 0x00A9;
+    uint16_t resultLocation = 0x01DD;
+    uint8_t result = 0x6E;
     std::cout << std::hex << "ram[$" << resultLocation << "]: 0x" << (uint16_t)nes.getMemVal(resultLocation) << "\n";
+    if (result == nes.getMemVal(resultLocation))
+    {
+        std::cout << "TEST PASSED!\n";
+    } else
+    {
+        std::cout << "TEST FAILED\n";
+    }
     
 
     return 0;
