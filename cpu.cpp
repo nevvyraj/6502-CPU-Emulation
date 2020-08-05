@@ -339,7 +339,12 @@ void cpu::BEQ()
         pc = absoluteAddr;
     }
 }
-void cpu::BIT(){std::cout << __func__ << "\n"; exit(-1);}
+void cpu::BIT()
+{
+    setStatus(N, (fetchedData & 0x80) >> 7);
+    setStatus(V, (fetchedData & 0x40) >> 6);
+    setStatus(Z, (A & fetchedData) == 0x00);
+}
 void cpu::BMI(){std::cout << __func__ << "\n"; exit(-1);}
 void cpu::BNE()
 {

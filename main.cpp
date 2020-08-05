@@ -46,7 +46,12 @@ int main (void){
     //test7 cmp,beq,bne
     //EXPECTED RESULTS: $15 = 0x7F
     //pc starts at 0600
-    std::string program = "a9 00 85 34 a9 ff 8d 30 01 a9 99 8d 9d 01 a9 db 8d 99 01 a9 2f 85 32 a9 32 85 4f a9 30 85 33 a9 70 85 af a9 18 85 30 c9 18 f0 02 29 00 09 01 c5 30 d0 02 29 00 a2 00 cd 30 01 f0 04 85 40 a6 40 d5 27 d0 06 09 84 85 41 a6 41 29 db dd 00 01 f0 02 29 00 85 42 a4 42 29 00 d9 00 01 d0 02 09 0f 85 43 a6 43 09 24 c1 40 f0 02 09 7f 85 44 a4 44 49 0f d1 33 d0 04 a5 44 85 15";
+    //std::string program = "a9 00 85 34 a9 ff 8d 30 01 a9 99 8d 9d 01 a9 db 8d 99 01 a9 2f 85 32 a9 32 85 4f a9 30 85 33 a9 70 85 af a9 18 85 30 c9 18 f0 02 29 00 09 01 c5 30 d0 02 29 00 a2 00 cd 30 01 f0 04 85 40 a6 40 d5 27 d0 06 09 84 85 41 a6 41 29 db dd 00 01 f0 02 29 00 85 42 a4 42 29 00 d9 00 01 d0 02 09 0f 85 43 a6 43 09 24 c1 40 f0 02 09 7f 85 44 a4 44 49 0f d1 33 d0 04 a5 44 85 15";
+
+    //test8 cpx,cpy,bit
+    //EXPECTED RESULTS $42 = 0xA5
+    //pc starts at 0600
+    std::string program = "a9 a5 85 20 8d 20 01 a9 5a 85 21 a2 a5 e0 a5 f0 02 a2 01 e4 20 f0 02 a2 02 ec 20 01 f0 02 a2 03 86 30 a4 30 c0 a5 f0 02 a0 04 c4 20 f0 02 a0 05 cc 20 01 f0 02 a0 06 84 31 a5 31 24 20 d0 02 a9 07 2c 20 01 d0 02 a9 08 24 21 d0 02 85 42";
 
     std::istringstream sampleProgram(program);
     
@@ -54,8 +59,8 @@ int main (void){
     nes.initPC(pcStart);
     nes.loadProgram(sampleProgram, pcStart);
 
-    uint16_t resultLocation = 0x0015;
-    uint8_t result = 0x7F;
+    uint16_t resultLocation = 0x0042;
+    uint8_t result = 0xA5;
 
     std::unordered_map<uint16_t,std::string> code;
     code = nes.disassemble();
